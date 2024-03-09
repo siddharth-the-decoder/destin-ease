@@ -13,7 +13,7 @@ const App = () => {
   const [coordinates, setCoordinates] = useState({});
   const [bounds, setBounds] = useState({});
   const [type, setType] = useState("restaurants");
-  const [rating, setRating] = useState(0); // Initialize with a default numerical value
+  const [rating, setRating] = useState(0);
 
   useEffect(() => {
     navigator.geolocation.getCurrentPosition(
@@ -25,21 +25,32 @@ const App = () => {
 
   useEffect(() => {
     const filteredPlaces = places.filter((place) => {
-      return rating === "" || place.rating > rating;
+      return rating === "" || (place.rating && place.rating > rating);
     });
     setFilteredPlaces(filteredPlaces);
-  }, [rating]);
+  }, [rating, places]);
 
   useEffect(() => {
     if (bounds.sw && bounds.ne) {
       setIsLoading(true);
-      getPlacesData(type, bounds.sw, bounds.ne).then((data) => {
-        setPlaces(data.filter((place) => place.name && place.num_reviews > 0));
-        setFilteredPlaces([]);
-        setIsLoading(false);
-      });
+      getPlacesData(type, bounds.sw, bounds.ne)
+        .then((data) => {
+          if (data && Array.isArray(data)) {
+            const filteredData = data.filter((place) => place.name && place.num_reviews > 0);
+            setPlaces(filteredData);
+            setFilteredPlaces([]);
+          } else {
+            console.error("Invalid data received:", data);
+          }
+        })
+        .catch((error) => {
+          console.error("Error fetching data:", error);
+        })
+        .finally(() => {
+          setIsLoading(false);
+        });
     }
-  }, [type,    bounds]);
+  }, [type, bounds]);
 
   return (
     <>
